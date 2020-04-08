@@ -1,0 +1,44 @@
+version: '3.7'
+
+networks:
+  crudnetwork:
+    name: crudnetwork
+
+volumes:
+  crudmysql:
+    name: crudmysql
+
+services:
+  crud-mysql:
+    container_name: crud-mysql
+    image: mysql:8
+    ports:
+      - 3000:3306
+    environment:
+      MYSQL_USER: kwantz
+      MYSQL_PASSWORD: kwantz123
+      MYSQL_DATABASE: db_crud
+      MYSQL_ROOT_PASSWORD: mysql
+    networks:
+      - crudnetwork
+    volumes:
+      - crudmysql:/var/lib/mysql
+
+  crud-redis:
+    container_name: crud-redis
+    image: redis:5.0.8
+    ports:
+      - 6000:6379
+    networks:
+      - crudnetwork
+
+  simple-crud:
+    container_name: simple-crud
+    image: simple-crud:1.0
+    ports:
+      - 8000:8000
+    depends_on:
+      - crud-mysql
+    networks:
+      - crudnetwork
+    command: sh -c "dockerize -wait tcp://crud-mysql:3306 -wait tcp://crud-redis:6379 -timeout 30s -wait-retry-interval 3s && /app/main"
