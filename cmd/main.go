@@ -4,26 +4,42 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/go-chi/chi"
 	"github.com/kwantz/simple-crud/configs"
-	"github.com/kwantz/simple-crud/internal/app/handler"
+
+	product "github.com/kwantz/simple-crud/internal/app/handler"
+	"github.com/kwantz/simple-crud/internal/app/repository"
+	"github.com/kwantz/simple-crud/internal/app/usecase"
 )
 
 func main() {
-	r := chi.NewRouter()
+	mysql := configs.ConnectMySQL()
+	defer mysql.Close()
 
-	r.Get("/products", handler.ProductListGetHandler)
-	r.Post("/products", handler.ProductPostHandler)
+	redis := configs.ConnectRedis()
+	defer redis.Close()
 
-	r.Get("/products/{productID}", handler.ProductGetHandler)
-	r.Put("/products/{productID}", handler.ProductPutHandler)
-	r.Delete("/products/{productID}", handler.ProductDeleteHandler)
+	productRepository := repository.NewProductRepository(mysql, redis)
+	productUsecase := usecase.NewProductUsecase(productRepository)
+	productHandler := product.NewProductHandler(productUsecase)
 
-	configs.ConnectRedis()
-
-	configs.ConnectMysql()
-	defer configs.MysqlClient.Close()
+	router := chi.NewRouter()
+	router.Post("/products", writeHandler(productHandler.PostProductHandler))
+	router.Get("/products", writeHandler(productHandler.GetProductListHandler))
+	router.Get("/products/{productID}", writeHandler(productHandler.GetProductHandler))
+	router.Put("/products/{productID}", writeHandler(productHandler.PutProductHandler))
+	router.Delete("/products/{productID}", writeHandler(productHandler.DeleteProductHandler))
 
 	log.Println("Serving...")
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":8000", router)
+}
+
+type readHandler func(*http.Request) []byte
+
+func writeHandler(handler readHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write(handler(r))
+	}
 }
