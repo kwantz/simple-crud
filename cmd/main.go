@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/kwantz/simple-crud/configs"
 
-	product "github.com/kwantz/simple-crud/internal/app/handler"
+	"github.com/kwantz/simple-crud/internal/app/handler"
 	"github.com/kwantz/simple-crud/internal/app/repository"
 	"github.com/kwantz/simple-crud/internal/app/usecase"
 )
@@ -23,7 +23,7 @@ func main() {
 
 	productRepository := repository.NewProductRepository(mysql, redis)
 	productUsecase := usecase.NewProductUsecase(productRepository)
-	productHandler := product.NewProductHandler(productUsecase)
+	productHandler := handler.NewProductHandler(productUsecase)
 
 	router := chi.NewRouter()
 	router.Post("/products", writeHandler(productHandler.PostProductHandler))

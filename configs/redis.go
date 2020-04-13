@@ -3,30 +3,15 @@ package configs
 import (
 	"log"
 
-	"github.com/go-redis/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
-// RedisClient is a global variable.
-// Use this variable instead of repeating calling ConnectRedis
-var RedisClient *redis.Client
-
-// ConnectRedis called in main.go
-func ConnectRedis() {
-	redisOptions := &redis.Options{
-		DB:       0,
-		Addr:     "crud-redis:6379",
-		Password: "",
-	}
-
-	log.Print("Connecting Redis ... ")
-	client := redis.NewClient(redisOptions)
-
-	_, err := client.Ping().Result()
+// ConnectRedis - redis connection
+func ConnectRedis() redis.Conn {
+	conn, err := redis.Dial("tcp", "crud-redis:6379")
 	if err != nil {
-		log.Println("Error")
-		log.Fatal(err.Error())
+		log.Fatalln(err)
 	}
 
-	log.Println("Success")
-	RedisClient = client
+	return conn
 }

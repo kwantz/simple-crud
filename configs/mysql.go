@@ -1,33 +1,24 @@
 package configs
 
 import (
-	"database/sql"
+	"fmt"
 	"log"
 
-	"github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
-// MysqlClient is a global variable.
-// Use this variable instead of repeating calling ConnectMysql
-var MysqlClient *sql.DB
+// ConnectMySQL - MySQL connection
+func ConnectMySQL() *sqlx.DB {
+	dbUser := "kwantz"
+	dbPass := "kwantz123"
+	dbName := "db_crud"
+	dbAddr := "crud-mysql:3306"
 
-// ConnectMysql called in main.go
-func ConnectMysql() {
-	sqlConfig := &mysql.Config{
-		Net:    "tcp",
-		User:   "kwantz",
-		Passwd: "kwantz123",
-		DBName: "db_crud",
-		Addr:   "crud-mysql:3306",
-	}
-
-	log.Print("Connecting MySQL ... ")
-	client, err := sql.Open("mysql", sqlConfig.FormatDSN())
+	option := fmt.Sprintf("%s:%s@tcp(%s)/%s", dbUser, dbPass, dbAddr, dbName)
+	conn, err := sqlx.Connect("mysql", option)
 	if err != nil {
-		log.Println("Error")
-		log.Fatal(err.Error())
+		log.Fatalln(err)
 	}
 
-	log.Println("Success")
-	MysqlClient = client
+	return conn
 }
